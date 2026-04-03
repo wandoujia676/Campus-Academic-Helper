@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>乐乐学业助手 - LearnMate 预览</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4a90d9;
+            --primary-dark: #3a7bc8;
+            --secondary: #67c23a;
+            --warning: #e6a23c;
+            --danger: #f56c6c;
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-primary: #303133;
+            --text-secondary: #606266;
+            --text-muted: #909399;
+            --border: #dcdfe6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1.5rem;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .app-header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .subject-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: var(--card-bg);
+            cursor: pointer;
+        }
+
+        .user-badge {
+            padding: 0.4rem 0.8rem;
+            background: var(--bg);
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .settings-btn {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        /* Main Content */
+        .app-main {
+            flex: 1;
+            padding: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Dashboard */
+        .dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .func-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .func-card {
+            padding: 1.5rem;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
+        }
+
+        .func-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        .func-card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .func-card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .func-card-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            padding-left: 0.5rem;
+            border-left: 3px solid var(--primary);
+        }
+
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .note-item {
+            padding: 1rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .note-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .note-item-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .note-item-date {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .note-item-preview {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .note-item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--bg);
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .error-warning {
+            padding: 1rem;
+            background: #fef0f0;
+            border-radius: 8px;
+            border-left: 4px solid var(--danger);
+        }
+
+        .error-warning-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .error-warning-title {
+            font-weight: 600;
+            color: var(--danger);
+        }
+
+        .error-warning-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.75rem;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--danger);
+            border-radius: 4px;
+            width: 30%;
+            transition: width 0.3s;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            padding: 0.75rem 0;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border);
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        .bottom-nav button {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .bottom-nav button.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .bottom-nav button:hover {
+            color: var(--primary);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal h3 {
+            margin-bottom: 1rem;
+        }
+
+        .modal p {
+            margin-bottom: 0.75rem;
+        }
+
+        .modal .btn {
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        /* Stats Cards */
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            padding: 1rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .stat-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Filter buttons */
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .filter-btn {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            background: var(--bg);
+            color: var(--text-secondary);
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Badge */
+        .error-badge {
+            margin-right: 0.5rem;
+            padding: 0.1rem 0.4rem;
+            background: var(--danger);
+            color: white;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        /* Preview Banner */
+        .preview-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-banner">
+        🎨 这是 LearnMate 前端预览页面 — 展示卡片式学习型设计理念
+    </div>
+
+    <header class="app-header">
+        <h1>🎓 乐乐学业助手</h1>
+        <select class="subject-select" id="subjectSelect">
+            <option value="adv_math">📐 高等数学</option>
+            <option value="ce">📝 大学英语</option>
+        </select>
+        <div>
+            <span class="user-badge">👤 乐乐</span>
+            <button class="settings-btn">⚙️ 设置</button>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <!-- Dashboard Page -->
+        <div id="dashboardPage" class="dashboard">
+            <!-- 功能卡片 -->
+            <section class="func-cards">
+                <div class="func-card" onclick="showPage('video')">
+                    <div class="func-card-icon">📹</div>
+                    <div class="func-card-title">视频笔记</div>
+                    <div class="func-card-desc">今日: 0</div>
+                </div>
+                <div class="func-card" onclick="showPage('exam')">
+                    <div class="func-card-icon">📄</div>
+                    <div class="func-card-title">试卷扫描</div>
+                    <div class="func-card-desc">待处理: 2</div>
+                </div>
+                <div class="func-card" onclick="showPage('stats')">
+                    <div class="func-card-icon">📚</div>
+                    <div class="func-card-title">错题本</div>
+                    <div class="func-card-desc">共: 28题</div>
+                </div>
+                <div class="func-card" onclick="showPage('stats')">
+                    <div class="func-card-icon">✍️</div>
+                    <div class="func-card-title">练习中心</div>
+                    <div class="func-card-desc">完成: 15题</div>
+                </div>
+            </section>
+
+            <!-- 最近笔记 -->
+            <section>
+                <h2 class="section-title">最近笔记 - 高等数学</h2>
+                <div class="notes-list">
+                    <div class="note-item">
+                        <div class="note-item-header">
+                            <span class="note-item-title">📑 第3章 导数与微分</span>
+                            <span class="note-item-date">2024-03-15</span>
+                        </div>
+                        <p class="note-item-preview">理解导数的几何意义，掌握基本求导法则...</p>
+                        <div class="note-item-actions">
+                            <button class="btn btn-primary">查看笔记</button>
+                            <button class="btn btn-secondary">生成练习</button>
+                            <button class="btn btn-secondary">编辑</button>
+                        </div>
+                    </div>
+                    <div class="note-item">
+                        <div class="note-item-header">
+                            <span class="note-item-title">📑 第2章 极限与连续</span>
+                            <span class="note-item-date">2024-03-10</span>
+                        </div>
+                        <p class="note-item-preview">掌握数列极限和函数极限的概念...</p>
+                        <div class="note-item-actions">
+                            <button class="btn btn-primary">查看笔记</button>
+                            <button class="btn btn-secondary">生成练习</button>
+                            <button class="btn btn-secondary">编辑</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 错题预警 -->
+            <section>
+                <h2 class="section-title">错题预警 - 高等数学</h2>
+                <div class="error-warning">
+                    <div class="error-warning-header">
+                        <span class="error-warning-title">⚠️ 极限计算</span>
+                        <div class="error-warning-stats">
+                            <span>出错: 5次</span>
+                            <span>掌握度: 30%</span>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill"></div>
+                    </div>
+                    <div style="margin-top: 0.75rem; text-align: right;">
+                        <button class="btn btn-primary">立即复习</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Video Notes Page -->
+        <div id="videoPage" class="hidden">
+            <div class="page-header" style="margin-bottom: 1.5rem;">
+                <h1 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;">📹 视频笔记生成</h1>
+                <p style="font-size: 0.9rem; color: var(--text-secondary);">
+                    粘贴课程视频链接，AI将自动分析内容并生成结构化章节笔记
+                </p>
+            </div>
+
+            <div class="note-item" style="padding: 2rem; text-align: center; margin-bottom: 1rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🎬</div>
+                <input type="text" placeholder="粘贴视频链接，如：https://www.bilibili.com/video/BV1xx4y1m7"
+                    style="width: 100%; max-width: 500px; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem;">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
+                    支持 B站、YouTube、学校平台等主流视频链接
+                </p>
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%; padding: 0.75rem;">
+                生成笔记
+            </button>
+
+            <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                <div style="font-size: 3rem; animation: spin 1s linear infinite;">⏳</div>
+                <p style="margin-top: 1rem;">视频笔记功能即将上线...</p>
+            </div>
+        </div>
+
+        <!-- Exam Scan Page -->
+        <div id="examPage" class="hidden">
+            <div class="page-header" style="margin-bottom: 1.5rem;">
+                <h1 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;">📄 试卷扫描</h1>
+                <p style="font-size: 0.9rem; color: var(--text-secondary);">
+                    上传试卷照片，AI将自动识别错题并分析原因
+                </p>
+            </div>
+
+            <div class="note-item" style="padding: 2rem; text-align: center; cursor: pointer;" onclick="alert('实际应用中会打开相机或文件选择器')">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📷</div>
+                <p style="font-size: 1rem; color: var(--text-secondary);">点击上传试卷图片</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
+                    支持 JPG、PNG、PDF 格式
+                </p>
+            </div>
+
+            <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                <div style="font-size: 3rem;">🔍</div>
+                <p style="margin-top: 1rem;">试卷扫描功能即将上线...</p>
+            </div>
+        </div>
+
+        <!-- Stats Page -->
+        <div id="statsPage" class="hidden">
+            <div class="page-header" style="margin-bottom: 1.5rem;">
+                <h1 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;">📚 错题本</h1>
+                <p style="font-size: 0.9rem; color: var(--text-secondary);">
+                    系统化管理错题，分析错误原因，关联知识点
+                </p>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-value">28</div>
+                    <div class="stat-label">总错题数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">已掌握</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-value">78%</div>
+                    <div class="stat-label">掌握率</div>
+                </div>
+            </div>
+
+            <!-- 筛选 -->
+            <div style="margin-bottom: 1rem;">
+                <h3 class="section-title">筛选错题</h3>
+                <div class="filter-group">
+                    <button class="filter-btn active">全部</button>
+                    <button class="filter-btn">计算失误</button>
+                    <button class="filter-btn">概念混淆</button>
+                    <button class="filter-btn">思路错误</button>
+                    <button class="filter-btn">审题不清</button>
+                </div>
+            </div>
+
+            <!-- 错题列表 -->
+            <div class="notes-list">
+                <div class="note-item" style="cursor: pointer;" onclick="showModal()">
+                    <div class="note-item-header">
+                        <span class="note-item-title">
+                            <span class="error-badge">计算失误</span>
+                            难度: 2/5
+                        </span>
+                    </div>
+                    <p class="note-item-preview" style="margin-bottom: 0.5rem;">
+                        设 f(x) = x²，求 lim(x→0) f(x)/x
+                    </p>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                        知识点: 极限 · 洛必达法则
+                    </div>
+                    <div class="note-item-actions">
+                        <button class="btn btn-primary">复习</button>
+                        <button class="btn btn-secondary">查看解析</button>
+                    </div>
+                </div>
+
+                <div class="note-item" style="cursor: pointer;" onclick="showModal()">
+                    <div class="note-item-header">
+                        <span class="note-item-title">
+                            <span class="error-badge">概念混淆</span>
+                            难度: 3/5
+                        </span>
+                    </div>
+                    <p class="note-item-preview" style="margin-bottom: 0.5rem;">
+                        证明 lim(x→0) sin(x)/x = 1
+                    </p>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                        知识点: 极限 · 夹逼准则 · 三角函数
+                    </div>
+                    <div class="note-item-actions">
+                        <button class="btn btn-primary">复习</button>
+                        <button class="btn btn-secondary">查看解析</button>
+                    </div>
+                </div>
+
+                <div class="note-item" style="cursor: pointer;" onclick="showModal()">
+                    <div class="note-item-header">
+                        <span class="note-item-title">
+                            <span class="error-badge">思路错误</span>
+                            难度: 2/5
+                        </span>
+                    </div>
+                    <p class="note-item-preview" style="margin-bottom: 0.5rem;">
+                        设函数 f(x) 在 x=0 处连续，则 f(0) = ?
+                    </p>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                        知识点: 连续 · 极限
+                    </div>
+                    <div class="note-item-actions">
+                        <button class="btn btn-primary">复习</button>
+                        <button class="btn btn-secondary">查看解析</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="active" onclick="showPage('dashboard')" id="navDashboard">📊 首页</button>
+        <button onclick="showPage('video')" id="navVideo">📹 视频笔记</button>
+        <button onclick="showPage('exam')" id="navExam">📄 试卷扫描</button>
+        <button onclick="showPage('stats')" id="navStats">📚 错题本</button>
+    </nav>
+
+    <!-- Modal -->
+    <div id="modal" class="modal-overlay hidden" onclick="hideModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <h3>错题详情</h3>
+            <p><strong>题目:</strong></p>
+            <p id="modalQuestion">设 f(x) = x²，求 lim(x→0) f(x)/x</p>
+            <p><strong>正确答案:</strong></p>
+            <p id="modalAnswer">0</p>
+            <p><strong>错误类型:</strong></p>
+            <p id="modalType">计算失误</p>
+            <p><strong>相关知识点:</strong></p>
+            <p id="modalPoints">极限 · 洛必达法则</p>
+            <button class="btn btn-primary" onclick="hideModal()">关闭</button>
+        </div>
+    </div>
+
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+
+    <script>
+        function showPage(page) {
+            // Hide all pages
+            document.getElementById('dashboardPage').classList.add('hidden');
+            document.getElementById('videoPage').classList.add('hidden');
+            document.getElementById('examPage').classList.add('hidden');
+            document.getElementById('statsPage').classList.add('hidden');
+
+            // Reset nav buttons
+            document.querySelectorAll('.bottom-nav button').forEach(btn => btn.classList.remove('active'));
+
+            // Show selected page
+            switch(page) {
+                case 'dashboard':
+                    document.getElementById('dashboardPage').classList.remove('hidden');
+                    document.getElementById('navDashboard').classList.add('active');
+                    break;
+                case 'video':
+                    document.getElementById('videoPage').classList.remove('hidden');
+                    document.getElementById('navVideo').classList.add('active');
+                    break;
+                case 'exam':
+                    document.getElementById('examPage').classList.remove('hidden');
+                    document.getElementById('navExam').classList.add('active');
+                    break;
+                case 'stats':
+                    document.getElementById('statsPage').classList.remove('hidden');
+                    document.getElementById('navStats').classList.add('active');
+                    break;
+            }
+        }
+
+        function showModal() {
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function hideModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        // Filter button interactivity
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Subject selector
+        document.getElementById('subjectSelect').addEventListener('change', function() {
+            const subject = this.value === 'adv_math' ? '高等数学' : '大学英语';
+            document.querySelectorAll('.section-title').forEach(el => {
+                if (el.textContent.includes('-')) {
+                    el.textContent = el.textContent.replace(/-.*$/, '- ' + subject);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
