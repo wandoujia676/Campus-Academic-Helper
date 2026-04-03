@@ -5,8 +5,31 @@
 import uuid
 import json
 import re
+import os
+import subprocess
+import tempfile
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
+from fastapi import HTTPException
+
+# 导入Claude服务
+from app.services.claude_service import ClaudeService
+
+# 初始化Claude服务
+claude_service = ClaudeService()
+
+
+def detect_platform(url: str) -> str:
+    """检测视频平台"""
+    if "bilibili" in url or "b23.tv" in url:
+        return "bilibili"
+    elif "youtube" in url:
+        return "youtube"
+    elif "douyin" in url:
+        return "douyin"
+    return "unknown"
+
 
 async def process_video(url: str, skill_type: str) -> dict:
     """
@@ -20,90 +43,189 @@ async def process_video(url: str, skill_type: str) -> dict:
     6. 生成Markdown笔记 + JSON元数据 + 练习题
     """
     note_id = f"note_{uuid.uuid4().hex[:8]}"
+    platform = detect_platform(url)
 
-    # TODO: 实际实现各步骤
-    # 当前为占位返回，实际需要调用:
-    # - yt-dlp 下载视频
-    # - FFmpeg 提取音频
-    # - Whisper 语音识别
-    # - Claude API 章节分解和笔记生成
+    # 创建临时目录
+    temp_dir = Path(tempfile.mkdtemp())
+    video_path: Optional[Path] = None
+    audio_path: Optional[Path] = None
 
-    # 占位实现 - 返回示例数据
-    markdown_content = """# 第1章 函数与极限
+    try:
+        # Step 1: 下载视频
+        video_path = await download_video(url, temp_dir, platform)
 
-## 1.1 函数的概念
-### 核心定义
-- 函数定义：设x和y是两个变量...
+        # Step 2: 提取音频
+        audio_path = await extract_audio(video_path, temp_dir)
 
-### 重点公式
-f'(x) = lim(x->x0) [f(x) - f(x0)] / (x - x0)
+        # Step 3: 语音识别
+        transcript_segments = await transcribe_audio(audio_path)
 
-## 1.2 极限的概念
-### 数列极限
-lim(n->oo) a_n = A
+        # Step 4: AI章节分解与笔记生成
+        skill_name = "adv_math" if skill_type == "adv_math" else "ce"
+        result = await claude_service.generate_video_notes(
+            transcript_segments=transcript_segments,
+            skill_type=skill_name,
+            video_url=url
+        )
 
-### 函数极限
-lim(x->x0) f(x) = L
-"""
+        markdown_content = result["markdown"]
+        chapters = result["chapters"]
+        exercises = result["exercises"]
+        title = result.get("title", "视频笔记")
 
-    json_metadata = {
-        "skill_type": skill_type,
-        "title": "第1章 函数与极限",
-        "chapters": [
-            {"id": "ch1", "title": "1.1 函数的概念", "startTime": 0, "endTime": 900},
-            {"id": "ch2", "title": "1.2 极限的概念", "startTime": 900, "endTime": 1800}
-        ],
-        "duration": 1800,
-        "platform": detect_platform(url),
-        "source_url": url,
-        "generated_at": datetime.now().isoformat()
-    }
-
-    exercises = [
-        {
-            "id": f"ex_{uuid.uuid4().hex[:6]}",
-            "type": "calculation",
-            "question": "设 f(x) = x²，求 f'(x)",
-            "answer": "2x",
-            "difficulty": 1
-        },
-        {
-            "id": f"ex_{uuid.uuid4().hex[:6]}",
-            "type": "calc",
-            "question": "求 lim(x→0) sin(x)/x",
-            "answer": "1",
-            "difficulty": 2
+        json_metadata = {
+            "skill_type": skill_type,
+            "title": title,
+            "chapters": chapters,
+            "duration": sum(ch.get("endTime", 0) - ch.get("startTime", 0) for ch in chapters),
+            "platform": platform,
+            "source_url": url,
+            "generated_at": datetime.now().isoformat()
         }
-    ]
 
-    # 保存到数据库
-    await save_note(
-        note_id=note_id,
-        skill_type=skill_type,
-        title="第1章 函数与极限",
-        source_type="video",
-        source_url=url,
-        markdown_content=markdown_content,
-        json_metadata=json_metadata
-    )
+        # 保存到数据库
+        await save_note(
+            note_id=note_id,
+            skill_type=skill_type,
+            title=title,
+            source_type="video",
+            source_url=url,
+            markdown_content=markdown_content,
+            json_metadata=json_metadata
+        )
 
-    return {
-        "id": note_id,
-        "status": "completed",
-        "markdown": markdown_content,
-        "metadata": json_metadata,
-        "exercises": exercises
+        return {
+            "id": note_id,
+            "status": "completed",
+            "markdown": markdown_content,
+            "metadata": json_metadata,
+            "exercises": exercises
+        }
+
+    except Exception as e:
+        # 如果任何步骤失败，返回错误
+        raise HTTPException(status_code=500, detail=f"视频处理失败: {str(e)}")
+
+    finally:
+        # 清理临时文件
+        for path in [video_path, audio_path]:
+            if path and path.exists():
+                try:
+                    path.unlink()
+                except:
+                    pass
+        try:
+            temp_dir.rmdir()
+        except:
+            pass
+
+
+async def download_video(url: str, temp_dir: Path, platform: str) -> Path:
+    """下载视频到本地"""
+    import yt_dlp
+
+    video_path = temp_dir / f"video_{uuid.uuid4().hex[:8]}.mp4"
+
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': str(video_path.with_suffix('.%(ext)s')),
+        'quiet': True,
+        'no_warnings': True,
     }
 
-def detect_platform(url: str) -> str:
-    """检测视频平台"""
-    if "bilibili" in url or "b23.tv" in url:
-        return "bilibili"
-    elif "youtube" in url:
-        return "youtube"
-    elif "douyin" in url:
-        return "douyin"
-    return "unknown"
+    # 平台特定选项
+    if platform == "bilibili":
+        ydl_opts['extract_audio'] = True
+        ydl_opts['format'] = 'bestaudio[ext=m4a]/bestaudio'
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            # 获取实际下载的文件路径
+            if info and 'entries' in info:
+                # 播放列表，取第一个
+                info = info['entries'][0]
+            actual_path = Path(ydl.prepare_filename(info))
+            if not actual_path.exists():
+                actual_path = video_path
+            return actual_path
+    except Exception as e:
+        raise Exception(f"视频下载失败: {str(e)}")
+
+
+async def extract_audio(video_path: Path, temp_dir: Path) -> Path:
+    """提取音频"""
+    audio_path = temp_dir / f"audio_{uuid.uuid4().hex[:8]}.wav"
+
+    try:
+        # 使用FFmpeg提取音频
+        cmd = [
+            'ffmpeg',
+            '-i', str(video_path),
+            '-vn',  # 不要视频
+            '-acodec', 'pcm_s16le',  # WAV格式
+            '-ar', '16000',  # 16kHz采样率
+            '-ac', '1',  # 单声道
+            '-y',  # 覆盖输出
+            str(audio_path)
+        ]
+
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=300  # 5分钟超时
+        )
+
+        if result.returncode != 0:
+            raise Exception(f"音频提取失败: {result.stderr}")
+
+        return audio_path
+
+    except subprocess.TimeoutExpired:
+        raise Exception("音频提取超时")
+    except FileNotFoundError:
+        raise Exception("FFmpeg未安装，请先安装FFmpeg")
+
+
+async def transcribe_audio(audio_path: Path) -> list:
+    """
+    使用Whisper进行语音识别
+    返回格式: [{"start": 0.0, "end": 5.5, "text": "文本"}]
+    """
+    try:
+        import whisper
+    except ImportError:
+        raise Exception("Whisper未安装，请运行: pip install openai-whisper")
+
+    try:
+        # 加载模型（使用base模型平衡速度和准确度）
+        model = whisper.load_model("base")
+
+        # 转录
+        result = model.transcribe(
+            str(audio_path),
+            language="zh",  # 中文
+            fp16=False,  # CPU模式
+        )
+
+        # 转换为分段格式
+        segments = []
+        for segment in result.get("segments", []):
+            segments.append({
+                "start": segment["start"],
+                "end": segment["end"],
+                "text": segment["text"].strip()
+            })
+
+        if not segments:
+            raise Exception("未能识别到语音内容")
+
+        return segments
+
+    except Exception as e:
+        raise Exception(f"语音识别失败: {str(e)}")
+
 
 async def save_note(
     note_id: str,
@@ -141,19 +263,3 @@ async def save_note(
 
     conn.commit()
     conn.close()
-
-# 预留: 后续实现视频下载和语音识别
-async def download_video(url: str) -> Path:
-    """下载视频到本地"""
-    # TODO: 使用 yt-dlp 下载视频
-    pass
-
-async def extract_audio(video_path: Path) -> Path:
-    """提取音频"""
-    # TODO: 使用 FFmpeg 提取音频
-    pass
-
-async def transcribe_audio(audio_path: Path) -> list:
-    """语音识别"""
-    # TODO: 使用 Whisper 进行语音识别
-    pass
