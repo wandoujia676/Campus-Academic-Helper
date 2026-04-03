@@ -1,7 +1,7 @@
 [project]
-name = "learnmate-backend"
+name = "university-helper-backend"
 version = "1.0.0"
-description = "乐乐学业助手后端服务"
+description = "大学助手后端服务"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi==0.115.0",

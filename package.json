@@ -1,7 +1,7 @@
 {
-  "name": "learnmate",
+  "name": "university-helper",
   "version": "1.0.0",
-  "description": "AI学习助手 - 乐乐学业助手",
+  "description": "大学助手 - AI学习辅助系统",
   "private": true,
   "workspaces": [
     "frontend",

@@ -19,8 +19,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="LearnMate API",
-    description="乐乐学业助手 - AI学习辅助系统后端API",
+    title="大学助手 API",
+    description="大学助手 - AI学习辅助系统后端API",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -42,7 +42,7 @@ app.include_router(sync.router, prefix="/api/sync", tags=["数据同步"])
 
 @app.get("/")
 async def root():
-    return {"message": "LearnMate API", "version": "1.0.0"}
+    return {"message": "大学助手 API", "version": "1.0.0"}
 
 
 @app.get("/health")

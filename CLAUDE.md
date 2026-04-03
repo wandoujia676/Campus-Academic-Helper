@@ -1,11 +1,11 @@
-# LearnMate - 乐乐学业助手
+# 大学助手 1.0
 
-AI驱动的学习辅助系统，帮助大一学生建立良好的学习习惯。
+AI驱动的学习辅助系统，帮助大学生建立良好的学习习惯。
 
 ## 项目结构
 
 ```
-learnmate/
+university-helper/
 ├── frontend/          # React + TypeScript + Vite 前端
 ├── backend/           # FastAPI Python 后端
 │   └── app/
@@ -61,3 +61,9 @@ uvicorn main:app --reload --port 8000
 2. 前端代理 `localhost:5173` → `localhost:8000`
 3. 数据库文件位于 `data/learnmate.db`
 4. Skill定义文件位于 `skills/` 目录
+
+## 版本号规则
+
+- 主版本号.次版本号 (如 1.0, 1.1, 1.2...)
+- 次版本号递增：新增功能或重要更新
+- 主版本号递增：重大架构变更
