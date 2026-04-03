@@ -267,3 +267,127 @@ class ClaudeService:
             return json.loads(json_str.strip())
         except json.JSONDecodeError:
             return []
+
+    async def analyze_exam_paper(
+        self,
+        ocr_text: str,
+        skill_type: str
+    ) -> Dict[str, Any]:
+        """
+        分析试卷图片OCR文本，提取错题并进行归因分析
+
+        Args:
+            ocr_text: OCR识别出的文本
+            skill_type: "adv_math" 或 "ce"
+
+        Returns:
+            {
+                "questions": [
+                    {
+                        "id": "q_xxx",
+                        "text": "题目",
+                        "answer": "正确答案",
+                        "error_type": "calculation|concept|logic|reading",
+                        "knowledge_points": ["知识点1", "知识点2"],
+                        "difficulty": 1-5,
+                        "source": "来源"
+                    }
+                ],
+                "summary": {
+                    "totalErrors": 5,
+                    "byType": {"calculation": 2, "concept": 1, ...}
+                }
+            }
+        """
+        if skill_type == "adv_math":
+            error_types = "计算失误、概念混淆、思路错误、审题不清"
+            example_questions = """
+常见高数题目模式：
+- "设f(x)=...，求f'(x)" → 导数计算
+- "求lim(x→0)..." → 极限计算
+- "证明lim..." → 极限证明
+"""
+        else:
+            error_types = "词汇不足、语法薄弱、阅读障碍、审题不清"
+            example_questions = """
+常见英语题目模式：
+- 阅读理解题：给出一段文章，后面有选择题
+- 完形填空题：给出一段文章，有空格需要填词
+- 翻译题：给出英文句子，要求翻译成中文
+"""
+
+        system_prompt = f"""你是一位专业的学习分析师和教师。你的职责是从试卷的OCR识别文本中提取错题，并进行归因分析。
+
+{skill_type}错题归因类型：
+- {error_types}
+
+请从OCR文本中识别：
+1. 学生做错的题目（通常有"×"、红色标记、或明确标注的错误）
+2. 题目的正确答案
+3. 错误类型
+4. 涉及的知识点
+5. 难度等级（1-5）
+
+输出格式为JSON：
+{{
+  "questions": [
+    {{
+      "id": "q_xxx",
+      "text": "题目内容",
+      "answer": "正确答案",
+      "error_type": "错误类型",
+      "knowledge_points": ["知识点列表"],
+      "difficulty": 1-5,
+      "source": "来自哪份试卷或哪个题目"
+    }}
+  ],
+  "summary": {{
+    "totalErrors": 错题总数,
+    "byType": {{
+      "calculation": 数量,
+      "concept": 数量,
+      "logic": 数量,
+      "reading": 数量
+    }}
+  }}
+}}
+
+如果OCR文本中无法确定错题，请基于文本内容推断可能的易错题型并生成模拟错题分析。"""
+
+        user_message = f"""请分析以下试卷OCR文本：
+
+{ocr_text}
+
+{example_questions}
+
+请输出JSON格式的分析结果。"""
+
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=4096,
+            system=system_prompt,
+            messages=[
+                {"role": "user", "content": user_message}
+            ]
+        )
+
+        response_text = response.content[0].text
+
+        try:
+            if "```json" in response_text:
+                json_str = response_text.split("```json")[1].split("```")[0]
+            else:
+                json_str = response_text
+            result = json.loads(json_str.strip())
+
+            # 确保有questions和summary字段
+            return {
+                "questions": result.get("questions", []),
+                "summary": result.get("summary", {"totalErrors": 0, "byType": {}})
+            }
+
+        except json.JSONDecodeError:
+            return {
+                "questions": [],
+                "summary": {"totalErrors": 0, "byType": {}}
+            }

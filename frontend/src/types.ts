@@ -23,19 +23,26 @@ export interface Question {
 
 export interface VideoNote {
   id: string
-  url: string
-  title: string
-  chapters: Chapter[]
+  status: string
   markdown: string
+  metadata: {
+    skill_type: string
+    title: string
+    chapters: Chapter[]
+    duration: number
+    platform: string
+    source_url: string
+    generated_at: string
+  }
   exercises: Exercise[]
 }
 
 export interface Chapter {
   id: string
   title: string
-  startTime: number
-  endTime: number
-  content: string
+  startTime?: number
+  endTime?: number
+  content?: string
 }
 
 export interface Exercise {
